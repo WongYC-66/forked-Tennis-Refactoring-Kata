@@ -2,149 +2,110 @@
 
 class TennisGame {
     constructor(player1, player2) {
-        this.server = player1;
-        this.receiver = player2;
-        this.serverScore = 0;
-        this.receiverScore = 0;
+        this.player1 = player1;
+        this.player2 = player2;
+        this.score1 = 0;
+        this.score2 = 0;
     }
 
-    getScore(serverScore, receiverScore) {
-        this.serverScore = serverScore;
-        this.receiverScore = receiverScore;
+    getScore(score1, score2) {
+        this.score1 = score1;
+        this.score2 = score2;
 
-        let result = new Deuce(
-            this, new GameServer(
-                this, new GameReceiver(
-                    this, new AdvantageServer(
-                        this, new AdvantageReceiver(
-                            this, new DefaultResult(this)))))).getResult();
-        return result.format();
+        let res = null
+
+        if (this.isDeuce()) {
+            res = Deuce
+        } else if (this.player1HasWon()) {
+            res = GamePlayer1
+        } else if (this.player2HasWon()) {
+            res = GamePlayer2
+        } else if (this.player1HasAdvantage()) {
+            res = Advantageplayer1
+        } else if (this.player2HasAdvantage()) {
+            res = Advantageplayer2
+        } else {
+            res = DefaultResult
+        }
+
+        return res.getResult(this)
     }
 
-    receiverHasAdvantage() {
-        return this.receiverScore >= 4 && (this.receiverScore - this.serverScore) === 1;
+    player2HasAdvantage() {
+        return this.score2 >= 4 && (this.score2 - this.score1) === 1;
     }
 
-    serverHasAdvantage() {
-        return this.serverScore >= 4 && (this.serverScore - this.receiverScore) === 1;
+    player1HasAdvantage() {
+        return this.score1 >= 4 && (this.score1 - this.score2) === 1;
     }
 
-    receiverHasWon() {
-        return this.receiverScore >= 4 && (this.receiverScore - this.serverScore) >= 2;
+    player2HasWon() {
+        return this.score2 >= 4 && (this.score2 - this.score1) >= 2;
     }
 
-    serverHasWon() {
-        return this.serverScore >= 4 && (this.serverScore - this.receiverScore) >= 2;
+    player1HasWon() {
+        return this.score1 >= 4 && (this.score1 - this.score2) >= 2;
     }
 
     isDeuce() {
-        return this.serverScore >= 3 && this.receiverScore >= 3 && (this.serverScore === this.receiverScore);
+        return this.score1 >= 3 && this.score2 >= 3 && (this.score1 === this.score2);
     }
 
 }
 
 class TennisResult {
-    constructor(serverScore, receiverScore) {
-        this.serverScore = serverScore;
-        this.receiverScore = receiverScore;
-    }
-
-    format() {
-        if ("" === this.receiverScore) {
-            return this.serverScore;
+    static format(score1, score2) {
+        if ("" === score2) {
+            return score1;
         }
-        if (this.serverScore === this.receiverScore) {
-            return this.serverScore + "-All";
+        if (score1 === score2) {
+            return score1 + "-All";
         }
-        return this.serverScore + "-" + this.receiverScore;
+        return score1 + "-" + score2;
     }
 }
 
 class Deuce {
-    constructor(game, nextResult) {
-        this.game = game;
-        this.nextResult = nextResult;
-    }
-
-    getResult() {
-        if (this.game.isDeuce()) {
-            return new TennisResult("Deuce", "");
-        }
-        return this.nextResult.getResult();
+    static getResult() {
+        return TennisResult.format("Deuce", "");
     }
 }
 
-class GameServer {
-    constructor(game, nextResult) {
-        this.game = game;
-        this.nextResult = nextResult;
-    }
-
-    getResult() {
-        if (this.game.serverHasWon()) {
-            return new TennisResult("Win for " + this.game.server, "");
-        }
-        return this.nextResult.getResult();
+class GamePlayer1 {
+    static getResult(game) {
+        return TennisResult.format("Win for " + game.player1, "");
     }
 }
 
-class GameReceiver {
-    constructor(game, nextResult) {
-        this.game = game;
-        this.nextResult = nextResult;
-    }
-
-    getResult() {
-        if (this.game.receiverHasWon()) {
-            return new TennisResult("Win for " + this.game.receiver, "");
-        }
-        return this.nextResult.getResult();
+class GamePlayer2 {
+    static getResult(game) {
+        return TennisResult.format("Win for " + game.player2, "");
     }
 }
 
-class AdvantageServer {
-    constructor(game, nextResult) {
-        this.game = game;
-        this.nextResult = nextResult;
-    }
-
-    getResult() {
-        if (this.game.serverHasAdvantage()) {
-            return new TennisResult("Advantage " + this.game.server, "");
-        }
-        return this.nextResult.getResult();
+class Advantageplayer1 {
+    static getResult(game) {
+        return TennisResult.format("Advantage " + game.player1, "");
     }
 }
 
-class AdvantageReceiver {
-    constructor(game, nextResult) {
-        this.game = game;
-        this.nextResult = nextResult;
-    }
-
-    getResult() {
-        if (this.game.receiverHasAdvantage()) {
-            return new TennisResult("Advantage " + this.game.receiver, "");
-        }
-        return this.nextResult.getResult();
+class Advantageplayer2 {
+    static getResult(game) {
+        return TennisResult.format("Advantage " + game.player2, "");
     }
 }
 
 class DefaultResult {
-    constructor(game) {
-        this.scores = ["Love", "Fifteen", "Thirty", "Forty"];
-        this.game = game;
-    }
-
-    getResult() {
-        return new TennisResult(this.scores[this.game.serverScore], this.scores[this.game.receiverScore]);
+    static getResult(game) {
+        let scores = ["Love", "Fifteen", "Thirty", "Forty"];
+        return TennisResult.format(scores[game.score1], scores[game.score2]);
     }
 }
 
 
-function getScore(serverScore, receiverScore) {
+function getScore(score1, score2) {
     let game = new TennisGame("player1", "player2");
-    return game.getScore(serverScore, receiverScore);
+    return game.getScore(score1, score2);
 }
 
 module.exports = getScore;
